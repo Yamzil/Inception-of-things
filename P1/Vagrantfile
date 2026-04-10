@@ -1,0 +1,65 @@
+Vagrant.configure("2") do |config|
+
+  # Disable synced folder between host and guest to avoid conflicts (SHOULD REMOVE IT ON LINUX SYSTEM)
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+
+  # SERVER (Controller)
+  config.vm.define "yamzilS" do |control|
+    control.vm.box = "ubuntu/jammy64"
+    control.vm.hostname = "yamzilS"
+    control.vm.network "private_network", ip: "192.168.56.110"
+
+    control.vm.provider "virtualbox" do |vb|
+      vb.memory = 2048
+      vb.cpus = 1
+    end
+
+    # Provision K3s Controller and kubectl
+    control.vm.provision "shell", inline: <<-SHELL
+    sudo rm -f /etc/ssh/sshd_config.d/60-cloudimg-settings.conf
+    echo "PasswordAuthentication yes" | sudo tee /etc/ssh/sshd_config.d/override.conf
+    sudo systemctl reload ssh
+      # Update & install dependencies
+      sudo apt-get update
+      sudo apt-get upgrade -y
+      sudo apt-get install -y curl
+      curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--node-ip=192.168.56.110 --flannel-iface=enp0s8" sh -
+      curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+      sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+      # Configure kubectl for vagrant user
+      mkdir -p /home/vagrant/.kube
+      sudo cp /etc/rancher/k3s/k3s.yaml /home/vagrant/.kube/config
+      sudo chown vagrant:vagrant /home/vagrant/.kube/config
+    SHELL
+  end
+
+  # SERVER WORKER (Agent)
+  config.vm.define "yamzilSW" do |control|
+    control.vm.box = "ubuntu/jammy64"
+    control.vm.hostname = "yamzilSW"
+    control.vm.network "private_network", ip: "192.168.56.111"
+    control.vm.provider "virtualbox" do |vb|
+      vb.memory = 2048
+      vb.cpus = 1
+    end
+
+    # Provision K3s Agent
+    control.vm.provision "shell", inline: <<-SHELL
+      sudo rm -f /etc/ssh/sshd_config.d/60-cloudimg-settings.conf
+      echo "PasswordAuthentication yes" | sudo tee /etc/ssh/sshd_config.d/override.conf
+      sudo systemctl reload ssh
+      # Update & install dependencies
+      sudo apt-get update
+      sudo apt-get upgrade -y
+      sudo apt-get install -y curl sshpass
+      while ! sshpass -p vagrant ssh -o StrictHostKeyChecking=no vagrant@192.168.56.110 "sudo test -f /var/lib/rancher/k3s/server/node-token"; do
+        echo "Waiting for K3s server..."
+        sleep 5
+      done
+      TOKEN=$(sshpass -p vagrant ssh -o StrictHostKeyChecking=no vagrant@192.168.56.110 "sudo cat /var/lib/rancher/k3s/server/node-token")
+      curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--node-ip=192.168.56.111" K3S_URL=https://192.168.56.110:6443 K3S_TOKEN=$TOKEN sh -
+    SHELL
+  end
+
+end
