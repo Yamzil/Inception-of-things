@@ -11,7 +11,7 @@ Vagrant.configure("2") do |config|
     end 
     control.vm.provision "file",
       source: "./confs",
-      kubectl get namespacesdestination: "/home/vagrant/confs"
+      destination: "/home/vagrant/confs"
     control.vm.provision "shell", path: "scripts/install.sh"
   end
 end
