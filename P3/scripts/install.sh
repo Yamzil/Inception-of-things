@@ -19,7 +19,10 @@ echo "Installing K3d"
 curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
 
 echo "Creating K3d cluster"
-k3d cluster create mycluster
+k3d cluster create mycluster \
+  --port "8080:80@loadbalancer" \
+  --port "8443:443@loadbalancer" \
+  --port "8888:8888@loadbalancer"
 
 # Configure kubectl IMMEDIATELY after cluster creation
 echo "Configuring kubectl"
