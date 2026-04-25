@@ -1,13 +1,13 @@
 # Part 2 — K3s and Three Simple Applications
 
-## 📋 Overview
+## Overview
 
 This part builds on Part 1 by deploying **3 web applications** on a single K3s server,
 routed by hostname using a Kubernetes **Ingress**.
 
 ---
 
-## 🏗️ Infrastructure Diagram
+## Infrastructure Diagram
 
 ```
                         Your Browser
@@ -31,7 +31,7 @@ routed by hostname using a Kubernetes **Ingress**.
 
 ---
 
-## 🌐 Request Flow — Step by Step
+## Request Flow — Step by Step
 
 When a user types `app1.com` in their browser:
 
@@ -43,7 +43,7 @@ When a user types `app1.com` in their browser:
    and reads the HOST header
         ↓
 3. Ingress checks its rules:
-   - "app1.com" → forward to app1-service ✅
+   - "app1.com" → forward to app1-service 
    - "app2.com" → forward to app2-service
    - anything else → forward to app3-service (default)
         ↓
@@ -58,9 +58,9 @@ When a user types `app1.com` in their browser:
 
 ---
 
-## 🔑 Key Concepts
+## Key Concepts
 
-### 📦 Pod
+### Pod
 The **smallest unit** in Kubernetes.
 Wraps one or more containers.
 
@@ -69,7 +69,7 @@ Pod
 └── nginx container (serving HTML)
 ```
 
-### 🚀 Deployment
+### Deployment
 Manages pods automatically.
 Ensures the desired number of replicas are always running.
 
@@ -80,7 +80,7 @@ spec:
 
 If a pod crashes → Deployment automatically creates a new one.
 
-### 🔌 Service
+### Service
 Gives pods a **stable internal address**.
 Pods have random IPs that change on restart — Service solves this.
 
@@ -90,7 +90,7 @@ Pod IP: 10.42.0.4  →    app1-service:80 (always works!)
 Pod IP: 10.42.0.8        even if pod IPs change
 ```
 
-### 🚦 Ingress
+### Ingress
 Routes **external** HTTP traffic to the correct Service
 based on the **hostname** in the request.
 
@@ -100,23 +100,8 @@ app2.com → app2-service
 *        → app3-service (default/catch-all)
 ```
 
----
 
-## 📁 File Structure
-
-```
-p2/
-├── Vagrantfile
-└── confs/
-    ├── app1.yaml      ← Deployment + Service + ConfigMap
-    ├── app2.yaml      ← Deployment (3 replicas!) + Service + ConfigMap
-    ├── app3.yaml      ← Deployment + Service + ConfigMap
-    └── ingress.yaml   ← Routing rules
-```
-
----
-
-## ⚙️ Vagrantfile
+##  Vagrantfile
 
 ```ruby
 Vagrant.configure("2") do |config|
@@ -170,7 +155,7 @@ end
 
 ---
 
-## 📄 Application Manifests
+## Application Manifests
 
 ### app1.yaml (1 replica)
 
@@ -286,7 +271,7 @@ spec:
 
 ---
 
-## 🧪 Testing
+## Testing
 
 ```bash
 # Test app1 routing
@@ -304,7 +289,7 @@ curl -H "Host: anything.com" http://192.168.56.110
 
 ---
 
-## 🔍 Useful kubectl Commands
+## Useful kubectl Commands
 
 ```bash
 # Check all pods are running (expect 5 total: 1+3+1)
@@ -325,7 +310,7 @@ kubectl describe ingress ingress
 
 ---
 
-## 🧠 Key Differences: Service vs Ingress
+## Key Differences: Service vs Ingress
 
 | | Service | Ingress |
 |---|---|---|
@@ -336,7 +321,7 @@ kubectl describe ingress ingress
 
 ---
 
-## ⚠️ Important Notes
+## Important Notes
 
 - The **Ingress** is not shown in `kubectl get pods` — show it separately
   with `kubectl get ingress` during your defense
